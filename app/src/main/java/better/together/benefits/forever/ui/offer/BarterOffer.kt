@@ -4,6 +4,8 @@ import java.util.UUID
 
 enum class OfferStatus {
     Pending,
+    Accepted,
+    Declined,
 }
 
 data class BarterOffer(
@@ -15,4 +17,23 @@ data class BarterOffer(
     val wantsInReturn: String,
     val message: String,
     val status: OfferStatus = OfferStatus.Pending,
+)
+
+val initialReceivedOffers = listOf(
+    BarterOffer(
+        requestId = "local-android-request",
+        requesterName = "You",
+        senderName = "Maria",
+        offering = "Professional photography session",
+        wantsInReturn = "Help building an Android screen",
+        message = "",
+    ),
+    BarterOffer(
+        requestId = "local-workout-request",
+        requesterName = "You",
+        senderName = "Daniel",
+        offering = "German conversation practice",
+        wantsInReturn = "Help with a workout plan",
+        message = "",
+    ),
 )

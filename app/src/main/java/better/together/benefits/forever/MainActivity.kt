@@ -14,12 +14,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import better.together.benefits.forever.ui.create.CreateRequestScreen
+import better.together.benefits.forever.ui.exchanges.ExchangesScreen
 import better.together.benefits.forever.ui.home.BarterRequest
 import better.together.benefits.forever.ui.home.HomeScreen
 import better.together.benefits.forever.ui.home.initialBarterRequests
 import better.together.benefits.forever.ui.offer.BarterOffer
 import better.together.benefits.forever.ui.offer.MakeOfferScreen
 import better.together.benefits.forever.ui.offer.OfferSentScreen
+import better.together.benefits.forever.ui.offer.initialReceivedOffers
 import better.together.benefits.forever.ui.request.RequestDetailsScreen
 import better.together.benefits.forever.ui.theme.BetterTogetherTheme
 import com.revenuecat.purchases.LogLevel
@@ -68,6 +70,7 @@ private enum class AppScreen {
     RequestDetails,
     MakeOffer,
     OfferSent,
+    Exchanges,
 }
 
 @Composable
@@ -76,6 +79,9 @@ private fun BetterTogetherApp() {
     var selectedRequest by remember { mutableStateOf<BarterRequest?>(null) }
     val requests = remember { mutableStateListOf<BarterRequest>().apply { addAll(initialBarterRequests) } }
     val offers = remember { mutableStateListOf<BarterOffer>() }
+    val receivedOffers = remember {
+        mutableStateListOf<BarterOffer>().apply { addAll(initialReceivedOffers) }
+    }
 
     fun returnHome() {
         selectedRequest = null
@@ -90,7 +96,23 @@ private fun BetterTogetherApp() {
                 selectedRequest = request
                 currentScreen = AppScreen.RequestDetails
             },
+            onOpenExchanges = { currentScreen = AppScreen.Exchanges },
         )
+
+        AppScreen.Exchanges -> {
+            BackHandler { returnHome() }
+            ExchangesScreen(
+                receivedOffers = receivedOffers,
+                sentOffers = offers,
+                onUpdateReceivedStatus = { offerId, status ->
+                    val index = receivedOffers.indexOfFirst { it.id == offerId }
+                    if (index >= 0) {
+                        receivedOffers[index] = receivedOffers[index].copy(status = status)
+                    }
+                },
+                onOpenHome = { returnHome() },
+            )
+        }
 
         AppScreen.CreateRequest -> {
             BackHandler { returnHome() }

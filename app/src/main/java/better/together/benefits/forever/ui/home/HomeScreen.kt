@@ -15,14 +15,11 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -31,6 +28,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import better.together.benefits.forever.ui.theme.BetterTogetherTheme
+import better.together.benefits.forever.ui.components.BetterTogetherBottomBar
 
 data class BarterRequest(
     val id: String = java.util.UUID.randomUUID().toString(),
@@ -63,9 +61,8 @@ fun HomeScreen(
     requests: List<BarterRequest> = initialBarterRequests,
     onAddRequest: () -> Unit = {},
     onViewBarter: (BarterRequest) -> Unit = {},
+    onOpenExchanges: () -> Unit = {},
 ) {
-    var selectedDestination by remember { mutableIntStateOf(0) }
-
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         floatingActionButton = {
@@ -77,16 +74,11 @@ fun HomeScreen(
             }
         },
         bottomBar = {
-            NavigationBar {
-                listOf("Home", "Exchanges", "Profile").forEachIndexed { index, label ->
-                    NavigationBarItem(
-                        selected = selectedDestination == index,
-                        onClick = { selectedDestination = index },
-                        icon = { Text(text = label.take(1)) },
-                        label = { Text(text = label) },
-                    )
-                }
-            }
+            BetterTogetherBottomBar(
+                selectedDestination = 0,
+                onHome = {},
+                onExchanges = onOpenExchanges,
+            )
         },
     ) { innerPadding ->
         HomeContent(
