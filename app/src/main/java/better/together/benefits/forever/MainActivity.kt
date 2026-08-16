@@ -17,6 +17,10 @@ import better.together.benefits.forever.ui.create.CreateRequestScreen
 import better.together.benefits.forever.ui.home.BarterRequest
 import better.together.benefits.forever.ui.home.HomeScreen
 import better.together.benefits.forever.ui.home.initialBarterRequests
+import better.together.benefits.forever.ui.offer.BarterOffer
+import better.together.benefits.forever.ui.offer.MakeOfferScreen
+import better.together.benefits.forever.ui.offer.OfferSentScreen
+import better.together.benefits.forever.ui.request.RequestDetailsScreen
 import better.together.benefits.forever.ui.theme.BetterTogetherTheme
 import com.revenuecat.purchases.LogLevel
 import com.revenuecat.purchases.Purchases
@@ -61,29 +65,72 @@ class MainActivity : ComponentActivity() {
 private enum class AppScreen {
     Home,
     CreateRequest,
+    RequestDetails,
+    MakeOffer,
+    OfferSent,
 }
 
 @Composable
 private fun BetterTogetherApp() {
     var currentScreen by remember { mutableStateOf(AppScreen.Home) }
+    var selectedRequest by remember { mutableStateOf<BarterRequest?>(null) }
     val requests = remember { mutableStateListOf<BarterRequest>().apply { addAll(initialBarterRequests) } }
+    val offers = remember { mutableStateListOf<BarterOffer>() }
+
+    fun returnHome() {
+        selectedRequest = null
+        currentScreen = AppScreen.Home
+    }
 
     when (currentScreen) {
         AppScreen.Home -> HomeScreen(
             requests = requests,
             onAddRequest = { currentScreen = AppScreen.CreateRequest },
+            onViewBarter = { request ->
+                selectedRequest = request
+                currentScreen = AppScreen.RequestDetails
+            },
         )
 
         AppScreen.CreateRequest -> {
-            BackHandler { currentScreen = AppScreen.Home }
+            BackHandler { returnHome() }
             CreateRequestScreen(
-                onBack = { currentScreen = AppScreen.Home },
+                onBack = { returnHome() },
                 onPublish = { request ->
                     requests.add(0, request)
-                    currentScreen = AppScreen.Home
+                    returnHome()
                 },
             )
         }
+
+        AppScreen.RequestDetails -> selectedRequest?.let { request ->
+            BackHandler { returnHome() }
+            RequestDetailsScreen(
+                request = request,
+                onBack = { returnHome() },
+                onMakeOffer = { currentScreen = AppScreen.MakeOffer },
+            )
+        } ?: returnHome()
+
+        AppScreen.MakeOffer -> selectedRequest?.let { request ->
+            BackHandler { currentScreen = AppScreen.RequestDetails }
+            MakeOfferScreen(
+                request = request,
+                onBack = { currentScreen = AppScreen.RequestDetails },
+                onSendOffer = { offer ->
+                    offers.add(offer)
+                    currentScreen = AppScreen.OfferSent
+                },
+            )
+        } ?: returnHome()
+
+        AppScreen.OfferSent -> selectedRequest?.let { request ->
+            BackHandler { returnHome() }
+            OfferSentScreen(
+                requesterName = request.personName,
+                onBackToHome = { returnHome() },
+            )
+        } ?: returnHome()
     }
 }
 

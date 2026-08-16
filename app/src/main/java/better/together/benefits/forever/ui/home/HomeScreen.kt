@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import better.together.benefits.forever.ui.theme.BetterTogetherTheme
 
 data class BarterRequest(
+    val id: String = java.util.UUID.randomUUID().toString(),
     val personName: String,
     val need: String,
     val offer: String,
