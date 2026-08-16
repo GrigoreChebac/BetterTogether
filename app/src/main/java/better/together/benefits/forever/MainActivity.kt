@@ -5,13 +5,18 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Box
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import better.together.benefits.forever.ui.create.CreateRequestScreen
+import better.together.benefits.forever.ui.home.BarterRequest
 import better.together.benefits.forever.ui.home.HomeScreen
+import better.together.benefits.forever.ui.home.initialBarterRequests
 import better.together.benefits.forever.ui.theme.BetterTogetherTheme
 import com.revenuecat.purchases.LogLevel
 import com.revenuecat.purchases.Purchases
@@ -47,8 +52,37 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             BetterTogetherTheme {
-                HomeScreen()
+                BetterTogetherApp()
             }
+        }
+    }
+}
+
+private enum class AppScreen {
+    Home,
+    CreateRequest,
+}
+
+@Composable
+private fun BetterTogetherApp() {
+    var currentScreen by remember { mutableStateOf(AppScreen.Home) }
+    val requests = remember { mutableStateListOf<BarterRequest>().apply { addAll(initialBarterRequests) } }
+
+    when (currentScreen) {
+        AppScreen.Home -> HomeScreen(
+            requests = requests,
+            onAddRequest = { currentScreen = AppScreen.CreateRequest },
+        )
+
+        AppScreen.CreateRequest -> {
+            BackHandler { currentScreen = AppScreen.Home }
+            CreateRequestScreen(
+                onBack = { currentScreen = AppScreen.Home },
+                onPublish = { request ->
+                    requests.add(0, request)
+                    currentScreen = AppScreen.Home
+                },
+            )
         }
     }
 }

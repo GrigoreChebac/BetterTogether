@@ -36,9 +36,10 @@ data class BarterRequest(
     val personName: String,
     val need: String,
     val offer: String,
+    val description: String = "",
 )
 
-private val mockRequests = listOf(
+val initialBarterRequests = listOf(
     BarterRequest(
         personName = "Alex",
         need = "Help with a logo",
@@ -58,6 +59,7 @@ private val mockRequests = listOf(
 
 @Composable
 fun HomeScreen(
+    requests: List<BarterRequest> = initialBarterRequests,
     onAddRequest: () -> Unit = {},
     onViewBarter: (BarterRequest) -> Unit = {},
 ) {
@@ -87,7 +89,7 @@ fun HomeScreen(
         },
     ) { innerPadding ->
         HomeContent(
-            requests = mockRequests,
+            requests = requests,
             onViewBarter = onViewBarter,
             contentPadding = innerPadding,
         )
