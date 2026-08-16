@@ -41,6 +41,7 @@ fun ExchangesScreen(
     sentOffers: List<BarterOffer>,
     onUpdateReceivedStatus: (String, OfferStatus) -> Unit,
     onOpenHome: () -> Unit,
+    onOpenProfile: () -> Unit,
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
     val displayedOffers = if (selectedTab == 0) receivedOffers else sentOffers
@@ -52,6 +53,7 @@ fun ExchangesScreen(
                 selectedDestination = 1,
                 onHome = onOpenHome,
                 onExchanges = {},
+                onProfile = onOpenProfile,
             )
         },
     ) { innerPadding ->
@@ -175,6 +177,7 @@ private fun ExchangesPreview() {
             sentOffers = emptyList(),
             onUpdateReceivedStatus = { _, _ -> },
             onOpenHome = {},
+            onOpenProfile = {},
         )
     }
 }

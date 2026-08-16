@@ -10,6 +10,7 @@ fun BetterTogetherBottomBar(
     selectedDestination: Int,
     onHome: () -> Unit,
     onExchanges: () -> Unit,
+    onProfile: () -> Unit,
 ) {
     NavigationBar {
         listOf("Home", "Exchanges", "Profile").forEachIndexed { index, label ->
@@ -19,6 +20,7 @@ fun BetterTogetherBottomBar(
                     when (index) {
                         0 -> onHome()
                         1 -> onExchanges()
+                        2 -> onProfile()
                     }
                 },
                 icon = { Text(text = label.take(1)) },

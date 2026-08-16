@@ -22,6 +22,10 @@ import better.together.benefits.forever.ui.offer.BarterOffer
 import better.together.benefits.forever.ui.offer.MakeOfferScreen
 import better.together.benefits.forever.ui.offer.OfferSentScreen
 import better.together.benefits.forever.ui.offer.initialReceivedOffers
+import better.together.benefits.forever.ui.offer.OfferStatus
+import better.together.benefits.forever.ui.profile.ProfileScreen
+import better.together.benefits.forever.ui.profile.ProfileStatistics
+import better.together.benefits.forever.ui.profile.currentLocalProfile
 import better.together.benefits.forever.ui.request.RequestDetailsScreen
 import better.together.benefits.forever.ui.theme.BetterTogetherTheme
 import com.revenuecat.purchases.LogLevel
@@ -33,6 +37,8 @@ import com.revenuecat.purchases.ui.revenuecatui.PaywallOptions
 
 
 class MainActivity : ComponentActivity() {
+    private var hasProAccess by mutableStateOf<Boolean?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -42,25 +48,32 @@ class MainActivity : ComponentActivity() {
             PurchasesConfiguration.Builder(this, "test_AmJSpGSlwPUFSVZhCWcMbRhgfbi")
             .build())
 
+        refreshCustomerInfo()
+
+
+        enableEdgeToEdge()
+        setContent {
+            BetterTogetherTheme {
+                BetterTogetherApp(
+                    hasProAccess = hasProAccess,
+                    onRefreshCustomerInfo = ::refreshCustomerInfo,
+                )
+            }
+        }
+    }
+
+    private fun refreshCustomerInfo() {
         Purchases.sharedInstance.getCustomerInfoWith(
             onError = { error -> println("Error: ${error.message}") },
             onSuccess = { customerInfo ->
-                val hasProAccess = customerInfo.entitlements.active["BetterTogether Pro"] != null
-                if (hasProAccess) {
+                hasProAccess = customerInfo.entitlements.active["BetterTogether Pro"] != null
+                if (hasProAccess == true) {
                     println("User has pro access!")
                 } else {
                     println("User does not have pro access")
                 }
             },
         )
-
-
-        enableEdgeToEdge()
-        setContent {
-            BetterTogetherTheme {
-                BetterTogetherApp()
-            }
-        }
     }
 }
 
@@ -71,10 +84,15 @@ private enum class AppScreen {
     MakeOffer,
     OfferSent,
     Exchanges,
+    Profile,
+    Paywall,
 }
 
 @Composable
-private fun BetterTogetherApp() {
+private fun BetterTogetherApp(
+    hasProAccess: Boolean?,
+    onRefreshCustomerInfo: () -> Unit,
+) {
     var currentScreen by remember { mutableStateOf(AppScreen.Home) }
     var selectedRequest by remember { mutableStateOf<BarterRequest?>(null) }
     val requests = remember { mutableStateListOf<BarterRequest>().apply { addAll(initialBarterRequests) } }
@@ -97,6 +115,7 @@ private fun BetterTogetherApp() {
                 currentScreen = AppScreen.RequestDetails
             },
             onOpenExchanges = { currentScreen = AppScreen.Exchanges },
+            onOpenProfile = { currentScreen = AppScreen.Profile },
         )
 
         AppScreen.Exchanges -> {
@@ -111,6 +130,34 @@ private fun BetterTogetherApp() {
                     }
                 },
                 onOpenHome = { returnHome() },
+                onOpenProfile = { currentScreen = AppScreen.Profile },
+            )
+        }
+
+        AppScreen.Profile -> {
+            BackHandler { returnHome() }
+            ProfileScreen(
+                profile = currentLocalProfile,
+                statistics = ProfileStatistics(
+                    requestsCreated = requests.count { it.personName == "You" },
+                    offersSent = offers.size,
+                    exchangesAccepted = receivedOffers.count { it.status == OfferStatus.Accepted } +
+                        offers.count { it.status == OfferStatus.Accepted },
+                ),
+                hasProAccess = hasProAccess,
+                onExplorePro = { currentScreen = AppScreen.Paywall },
+                onOpenHome = { returnHome() },
+                onOpenExchanges = { currentScreen = AppScreen.Exchanges },
+            )
+        }
+
+        AppScreen.Paywall -> {
+            BackHandler { currentScreen = AppScreen.Profile }
+            PaywallScreen(
+                onDismiss = {
+                    onRefreshCustomerInfo()
+                    currentScreen = AppScreen.Profile
+                },
             )
         }
 
@@ -157,16 +204,16 @@ private fun BetterTogetherApp() {
 }
 
 @Composable
-fun PaywallScreen(modifier: Modifier = Modifier) {
-    var showPaywall by remember { mutableStateOf(true) }
-    if (showPaywall) {
-        Box(modifier = modifier) {
-            Paywall(
-                options = PaywallOptions
-                    .Builder(dismissRequest = { showPaywall = false })
-                    .setShouldDisplayDismissButton(true)
-                    .build(),
-            )
-        }
+fun PaywallScreen(
+    modifier: Modifier = Modifier,
+    onDismiss: () -> Unit = {},
+) {
+    Box(modifier = modifier) {
+        Paywall(
+            options = PaywallOptions
+                .Builder(dismissRequest = onDismiss)
+                .setShouldDisplayDismissButton(true)
+                .build(),
+        )
     }
 }

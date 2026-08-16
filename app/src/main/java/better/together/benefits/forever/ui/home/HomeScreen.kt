@@ -62,6 +62,7 @@ fun HomeScreen(
     onAddRequest: () -> Unit = {},
     onViewBarter: (BarterRequest) -> Unit = {},
     onOpenExchanges: () -> Unit = {},
+    onOpenProfile: () -> Unit = {},
 ) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -78,6 +79,7 @@ fun HomeScreen(
                 selectedDestination = 0,
                 onHome = {},
                 onExchanges = onOpenExchanges,
+                onProfile = onOpenProfile,
             )
         },
     ) { innerPadding ->
