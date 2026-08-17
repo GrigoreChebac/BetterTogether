@@ -1,6 +1,22 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
+    alias(libs.plugins.jetbrains.kotlin.compose)
+    alias(libs.plugins.jetbrains.kotlin.serialization)
+}
+
+val localProperties = Properties().apply {
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        localPropertiesFile.inputStream().use(::load)
+    }
+}
+
+fun localPropertyBuildConfigField(name: String): String {
+    val value = localProperties.getProperty(name).orEmpty()
+    return "\"${value.replace("\\", "\\\\").replace("\"", "\\\"")}\""
 }
 
 android {
@@ -18,6 +34,13 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+
+        buildConfigField("String", "SUPABASE_URL", localPropertyBuildConfigField("SUPABASE_URL"))
+        buildConfigField(
+            "String",
+            "SUPABASE_PUBLISHABLE_KEY",
+            localPropertyBuildConfigField("SUPABASE_PUBLISHABLE_KEY"),
+        )
     }
 
     buildTypes {
@@ -38,9 +61,7 @@ android {
     }
     buildFeatures {
         compose = true
-    }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.1"
+        buildConfig = true
     }
     packaging {
         resources {
@@ -50,8 +71,10 @@ android {
 }
 
 dependencies {
-
-
+    implementation(platform(libs.supabase.bom))
+    implementation(libs.supabase.postgrest)
+    implementation(libs.supabase.auth)
+    implementation(libs.ktor.client.android)
     implementation(libs.purchases.ui)
     implementation(libs.purchases)
     implementation(libs.androidx.core.ktx)

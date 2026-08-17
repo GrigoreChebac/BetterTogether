@@ -35,7 +35,6 @@ import com.revenuecat.purchases.getCustomerInfoWith
 import com.revenuecat.purchases.ui.revenuecatui.Paywall
 import com.revenuecat.purchases.ui.revenuecatui.PaywallOptions
 
-
 class MainActivity : ComponentActivity() {
     private var hasProAccess by mutableStateOf<Boolean?>(null)
 
