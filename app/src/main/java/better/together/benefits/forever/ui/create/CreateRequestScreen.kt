@@ -10,6 +10,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -27,14 +28,15 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import better.together.benefits.forever.ui.home.BarterRequest
 import better.together.benefits.forever.ui.theme.BetterTogetherTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateRequestScreen(
     onBack: () -> Unit,
-    onPublish: (BarterRequest) -> Unit,
+    isSubmitting: Boolean,
+    errorMessage: String?,
+    onPublish: (need: String, offer: String, description: String) -> Unit,
 ) {
     var need by remember { mutableStateOf("") }
     var offer by remember { mutableStateOf("") }
@@ -51,7 +53,7 @@ fun CreateRequestScreen(
             TopAppBar(
                 title = { Text("Create request") },
                 navigationIcon = {
-                    TextButton(onClick = onBack) {
+                    TextButton(onClick = onBack, enabled = !isSubmitting) {
                         Text("Back")
                     }
                 },
@@ -119,19 +121,16 @@ fun CreateRequestScreen(
                     showValidationErrors = true
                     if (need.isNotBlank() && offer.isNotBlank()) {
                         focusManager.clearFocus()
-                        onPublish(
-                            BarterRequest(
-                                personName = "You",
-                                need = need.trim(),
-                                offer = offer.trim(),
-                                description = description.trim(),
-                            ),
-                        )
+                        onPublish(need.trim(), offer.trim(), description.trim())
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
+                enabled = !isSubmitting,
             ) {
-                Text("Publish request")
+                if (isSubmitting) CircularProgressIndicator() else Text("Publish request")
+            }
+            if (errorMessage != null) {
+                Text(errorMessage, color = androidx.compose.material3.MaterialTheme.colorScheme.error)
             }
         }
     }
@@ -141,6 +140,6 @@ fun CreateRequestScreen(
 @Composable
 private fun CreateRequestScreenPreview() {
     BetterTogetherTheme(dynamicColor = false) {
-        CreateRequestScreen(onBack = {}, onPublish = {})
+        CreateRequestScreen(onBack = {}, isSubmitting = false, errorMessage = null, onPublish = { _, _, _ -> })
     }
 }

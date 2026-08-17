@@ -26,9 +26,10 @@ import better.together.benefits.forever.data.auth.AuthState
 import better.together.benefits.forever.data.profile.Profile
 import better.together.benefits.forever.ui.create.CreateRequestScreen
 import better.together.benefits.forever.ui.exchanges.ExchangesScreen
-import better.together.benefits.forever.ui.home.BarterRequest
+import better.together.benefits.forever.data.request.BarterRequest
 import better.together.benefits.forever.ui.home.HomeScreen
-import better.together.benefits.forever.ui.home.initialBarterRequests
+import better.together.benefits.forever.ui.home.HomeUiState
+import better.together.benefits.forever.ui.home.HomeViewModel
 import better.together.benefits.forever.ui.offer.BarterOffer
 import better.together.benefits.forever.ui.offer.MakeOfferScreen
 import better.together.benefits.forever.ui.offer.OfferSentScreen
@@ -102,6 +103,7 @@ private fun AuthenticatedApp(
             hasProAccess = hasProAccess,
             onRefreshCustomerInfo = onRefreshCustomerInfo,
             currentProfile = state.profile,
+            currentUserId = state.userId,
         )
         AuthState.Error -> AuthErrorScreen(onRetry = authViewModel::retry)
     }
@@ -147,10 +149,13 @@ private fun BetterTogetherApp(
     hasProAccess: Boolean?,
     onRefreshCustomerInfo: () -> Unit,
     currentProfile: Profile,
+    currentUserId: String,
+    homeViewModel: HomeViewModel = viewModel(),
 ) {
     var currentScreen by remember { mutableStateOf(AppScreen.Home) }
     var selectedRequest by remember { mutableStateOf<BarterRequest?>(null) }
-    val requests = remember { mutableStateListOf<BarterRequest>().apply { addAll(initialBarterRequests) } }
+    val homeState by homeViewModel.uiState.collectAsStateWithLifecycle()
+    val createState by homeViewModel.createState.collectAsStateWithLifecycle()
     val offers = remember { mutableStateListOf<BarterOffer>() }
     val receivedOffers = remember {
         mutableStateListOf<BarterOffer>().apply { addAll(initialReceivedOffers) }
@@ -163,8 +168,13 @@ private fun BetterTogetherApp(
 
     when (currentScreen) {
         AppScreen.Home -> HomeScreen(
-            requests = requests,
-            onAddRequest = { currentScreen = AppScreen.CreateRequest },
+            uiState = homeState,
+            currentUserId = currentUserId,
+            onRetry = homeViewModel::refresh,
+            onAddRequest = {
+                homeViewModel.clearCreateError()
+                currentScreen = AppScreen.CreateRequest
+            },
             onViewBarter = { request ->
                 selectedRequest = request
                 currentScreen = AppScreen.RequestDetails
@@ -194,7 +204,10 @@ private fun BetterTogetherApp(
             ProfileScreen(
                 profile = currentLocalProfile.copy(displayName = currentProfile.displayName),
                 statistics = ProfileStatistics(
-                    requestsCreated = requests.count { it.personName == "You" },
+                    requestsCreated = (homeState as? HomeUiState.Success)
+                        ?.requests
+                        ?.count { it.ownerId == currentUserId }
+                        ?: 0,
                     offersSent = offers.size,
                     exchangesAccepted = receivedOffers.count { it.status == OfferStatus.Accepted } +
                         offers.count { it.status == OfferStatus.Accepted },
@@ -220,9 +233,16 @@ private fun BetterTogetherApp(
             BackHandler { returnHome() }
             CreateRequestScreen(
                 onBack = { returnHome() },
-                onPublish = { request ->
-                    requests.add(0, request)
-                    returnHome()
+                isSubmitting = createState.isSubmitting,
+                errorMessage = createState.errorMessage,
+                onPublish = { need, offer, description ->
+                    homeViewModel.createRequest(
+                        ownerId = currentUserId,
+                        need = need,
+                        offer = offer,
+                        description = description,
+                        onSuccess = { returnHome() },
+                    )
                 },
             )
         }
@@ -231,6 +251,7 @@ private fun BetterTogetherApp(
             BackHandler { returnHome() }
             RequestDetailsScreen(
                 request = request,
+                currentUserId = currentUserId,
                 onBack = { returnHome() },
                 onMakeOffer = { currentScreen = AppScreen.MakeOffer },
             )

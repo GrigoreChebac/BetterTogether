@@ -29,7 +29,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import better.together.benefits.forever.ui.home.BarterRequest
+import better.together.benefits.forever.data.request.BarterRequest
+import kotlinx.datetime.Instant
 import better.together.benefits.forever.ui.theme.BetterTogetherTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -156,7 +157,7 @@ private fun OfferTextField(
 private fun MakeOfferPreview() {
     BetterTogetherTheme(dynamicColor = false) {
         MakeOfferScreen(
-            request = BarterRequest("preview", "Alex", "Logo help", "English lessons"),
+            request = BarterRequest("preview", "owner", "Alex", "Logo help", "English lessons", "", Instant.DISTANT_PAST),
             onBack = {},
             onSendOffer = {},
         )
