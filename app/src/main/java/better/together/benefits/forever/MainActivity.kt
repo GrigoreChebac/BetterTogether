@@ -23,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import better.together.benefits.forever.data.auth.AuthState
+import better.together.benefits.forever.data.profile.Profile
 import better.together.benefits.forever.ui.create.CreateRequestScreen
 import better.together.benefits.forever.ui.exchanges.ExchangesScreen
 import better.together.benefits.forever.ui.home.BarterRequest
@@ -95,11 +96,12 @@ private fun AuthenticatedApp(
 ) {
     val authState by authViewModel.authState.collectAsStateWithLifecycle()
 
-    when (authState) {
+    when (val state = authState) {
         AuthState.Loading -> AuthLoadingScreen()
         is AuthState.Authenticated -> BetterTogetherApp(
             hasProAccess = hasProAccess,
             onRefreshCustomerInfo = onRefreshCustomerInfo,
+            currentProfile = state.profile,
         )
         AuthState.Error -> AuthErrorScreen(onRetry = authViewModel::retry)
     }
@@ -144,6 +146,7 @@ private enum class AppScreen {
 private fun BetterTogetherApp(
     hasProAccess: Boolean?,
     onRefreshCustomerInfo: () -> Unit,
+    currentProfile: Profile,
 ) {
     var currentScreen by remember { mutableStateOf(AppScreen.Home) }
     var selectedRequest by remember { mutableStateOf<BarterRequest?>(null) }
@@ -189,7 +192,7 @@ private fun BetterTogetherApp(
         AppScreen.Profile -> {
             BackHandler { returnHome() }
             ProfileScreen(
-                profile = currentLocalProfile,
+                profile = currentLocalProfile.copy(displayName = currentProfile.displayName),
                 statistics = ProfileStatistics(
                     requestsCreated = requests.count { it.personName == "You" },
                     offersSent = offers.size,

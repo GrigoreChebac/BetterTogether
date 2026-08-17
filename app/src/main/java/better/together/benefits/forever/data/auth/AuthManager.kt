@@ -1,6 +1,8 @@
 package better.together.benefits.forever.data.auth
 
 import better.together.benefits.forever.data.remote.SupabaseProvider
+import better.together.benefits.forever.data.profile.Profile
+import better.together.benefits.forever.data.profile.ProfileRepository
 import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -9,7 +11,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-class AuthManager {
+class AuthManager(
+    private val profileRepository: ProfileRepository = ProfileRepository(),
+) {
     private val auth = SupabaseProvider.client.auth
     private val bootstrapMutex = Mutex()
     private val _state = MutableStateFlow<AuthState>(AuthState.Loading)
@@ -18,6 +22,9 @@ class AuthManager {
 
     val currentUserId: String?
         get() = (_state.value as? AuthState.Authenticated)?.userId
+
+    val currentProfile: Profile?
+        get() = (_state.value as? AuthState.Authenticated)?.profile
 
     suspend fun authenticate() {
         bootstrapMutex.withLock {
@@ -32,7 +39,11 @@ class AuthManager {
                 }
 
                 _state.value = if (user != null) {
-                    AuthState.Authenticated(user.id)
+                    val profile = profileRepository.ensureCurrentUserProfile(user.id)
+                    AuthState.Authenticated(
+                        userId = user.id,
+                        profile = profile,
+                    )
                 } else {
                     AuthState.Error
                 }
