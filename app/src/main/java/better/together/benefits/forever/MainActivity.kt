@@ -6,6 +6,12 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Box
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -13,6 +19,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import better.together.benefits.forever.data.auth.AuthState
 import better.together.benefits.forever.ui.create.CreateRequestScreen
 import better.together.benefits.forever.ui.exchanges.ExchangesScreen
 import better.together.benefits.forever.ui.home.BarterRequest
@@ -28,6 +38,7 @@ import better.together.benefits.forever.ui.profile.ProfileStatistics
 import better.together.benefits.forever.ui.profile.currentLocalProfile
 import better.together.benefits.forever.ui.request.RequestDetailsScreen
 import better.together.benefits.forever.ui.theme.BetterTogetherTheme
+import better.together.benefits.forever.ui.auth.AuthViewModel
 import com.revenuecat.purchases.LogLevel
 import com.revenuecat.purchases.Purchases
 import com.revenuecat.purchases.PurchasesConfiguration
@@ -53,7 +64,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             BetterTogetherTheme {
-                BetterTogetherApp(
+                AuthenticatedApp(
                     hasProAccess = hasProAccess,
                     onRefreshCustomerInfo = ::refreshCustomerInfo,
                 )
@@ -73,6 +84,48 @@ class MainActivity : ComponentActivity() {
                 }
             },
         )
+    }
+}
+
+@Composable
+private fun AuthenticatedApp(
+    hasProAccess: Boolean?,
+    onRefreshCustomerInfo: () -> Unit,
+    authViewModel: AuthViewModel = viewModel(),
+) {
+    val authState by authViewModel.authState.collectAsStateWithLifecycle()
+
+    when (authState) {
+        AuthState.Loading -> AuthLoadingScreen()
+        is AuthState.Authenticated -> BetterTogetherApp(
+            hasProAccess = hasProAccess,
+            onRefreshCustomerInfo = onRefreshCustomerInfo,
+        )
+        AuthState.Error -> AuthErrorScreen(onRetry = authViewModel::retry)
+    }
+}
+
+@Composable
+private fun AuthLoadingScreen() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center,
+    ) {
+        CircularProgressIndicator()
+    }
+}
+
+@Composable
+private fun AuthErrorScreen(onRetry: () -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Text("Could not connect. Please try again.")
+        Button(onClick = onRetry) {
+            Text("Retry")
+        }
     }
 }
 
